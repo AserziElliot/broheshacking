@@ -1,1114 +1,462 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <script src="/socket.io/socket.io.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebOS - By Gemini</title>
+    <title>MountainOS - Pro Edition</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         /* =========================================
-           1. CSS: VARIABLES Y RESET
+           1. CSS: VARIABLES, NÚCLEO Y CURSOR ARCH/MINT
            ========================================= */
         :root {
-            --bg-color: #1e1e2e;
-            --window-bg: rgba(30, 30, 46, 0.75);
-            --window-border: rgba(255, 255, 255, 0.15);
-            --text-color: #cdd6f4;
-            --accent-color: #89b4fa;
-            --taskbar-bg: rgba(17, 17, 27, 0.85);
-            --danger-color: #f38ba8;
-            --success-color: #a6e3a1;
+            --bg-color: #0f0f14;
+            --window-bg: rgba(20, 20, 25, 0.85);
+            --window-border: rgba(255, 255, 255, 0.1);
+            --text-color: #e0e0e0;
+            --accent-color: #3498db; /* Mountain Blue */
+            --taskbar-bg: rgba(10, 10, 15, 0.9);
+            --danger: #e74c3c;
+            --success: #2ecc71;
         }
-
 
         * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            margin: 0; padding: 0; box-sizing: border-box;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            /* CURSOR PERSONALIZADO (Estilo Linux Mint / Breeze Dark) */
-            cursor: url('https://cdn-icons-png.flaticon.com/32/3031/3031714.png'), auto !important; 
+            /* Cursor oscuro estilo Linux/Breeze creado con SVG puro para que nunca falle */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="black" stroke="white" stroke-width="1.5"><path d="M4 2l11 11h-5l5 7-2 1-5-7-4 5z"/></svg>'), auto !important; 
         }
-
 
         body {
-            overflow: hidden;
-            background-color: #000;
-            color: var(--text-color);
-            height: 100vh;
-            width: 100vw;
-            user-select: none;
+            overflow: hidden; background-color: #000; color: var(--text-color);
+            height: 100vh; width: 100vw; user-select: none;
         }
 
-
-        /* Enlaces y botones con cursor interactivo */
-        button, a, .start-item, .window-controls span {
-            cursor: url('https://cdn-icons-png.flaticon.com/32/3031/3031715.png'), pointer !important;
+        button, a, .start-item, .window-header, .app-card {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="black" stroke="white" stroke-width="1.5"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.14 2-3.74a4.5 4.5 0 0 0-9 0c0 1.6.79 2.93 2 3.74zm-2 1.58A6.47 6.47 0 0 0 4 17.5 6.5 6.5 0 0 0 10.5 24 6.5 6.5 0 0 0 17 17.5a6.47 6.47 0 0 0-3-4.68v2.36a4.5 4.5 0 1 1-6 0v-2.36z"/></svg>'), pointer !important;
         }
 
-
-        /* Para campos de texto */
-        input, textarea {
-            cursor: text !important;
-            user-select: auto;
-        }
-
+        input, textarea { cursor: text !important; user-select: auto; }
 
         /* =========================================
-           2. CSS: PANTALLAS DE SETUP Y LOGIN
+           2. CSS: LOGIN Y PANTALLAS
            ========================================= */
         .fullscreen-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease, visibility 0.8s;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #0a0f16, #141e2a, #1c2a3b);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.5s;
         }
 
-
-        .setup-box, .login-box {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 50px;
-            border-radius: 16px;
-            border: 1px solid var(--window-border);
-            text-align: center;
-            width: 450px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .login-box {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
+            padding: 40px; border-radius: 12px; border: 1px solid var(--window-border);
+            text-align: center; width: 400px;
         }
 
-
-        @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-
-        .setup-box h1 { margin-bottom: 15px; font-weight: 400; font-size: 28px; }
-        .setup-box p { color: #a6adc8; margin-bottom: 25px; line-height: 1.5; }
+        .login-box h1 { margin-bottom: 20px; font-weight: 600; font-size: 24px; color: var(--accent-color); }
         
-        .setup-step { display: none; }
-        .setup-step.active { display: block; animation: fadeIn 0.4s ease; }
-
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        input.sys-input {
+            width: 100%; padding: 12px; margin: 10px 0; background: rgba(0,0,0,0.5);
+            border: 1px solid var(--window-border); color: white; border-radius: 6px; outline: none;
         }
-        
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            margin: 10px 0;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--window-border);
-            color: white;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.3s;
-            font-size: 14px;
-        }
-
-
-        input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 8px rgba(137, 180, 250, 0.3);
-        }
-
+        input.sys-input:focus { border-color: var(--accent-color); }
 
         .btn {
-            background: var(--accent-color);
-            color: #111;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            margin-top: 20px;
-            width: 100%;
-            transition: transform 0.1s, filter 0.2s;
+            background: var(--accent-color); color: #fff; border: none; padding: 12px 20px;
+            border-radius: 6px; font-weight: 600; width: 100%; margin-top: 15px; transition: 0.2s;
         }
-
-
-        .btn:hover { filter: brightness(1.1); }
-        .btn:active { transform: scale(0.97); }
-
-
-        .hidden { 
-            opacity: 0 !important; 
-            visibility: hidden !important; 
-            pointer-events: none;
-        }
-
-
-        .user-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: #111;
-            margin: 0 auto 20px auto;
-            font-weight: bold;
-        }
-
-
-        .user-list {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-
-        .user-chip {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 20px;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-        }
-
-
-        .user-chip:hover, .user-chip.selected {
-            background: rgba(255,255,255,0.2);
-            border-color: var(--accent-color);
-        }
-
+        .btn:hover { filter: brightness(1.2); }
+        .hidden { opacity: 0; pointer-events: none; visibility: hidden; }
 
         /* =========================================
-           3. CSS: ESCRITORIO Y FONDOS
+           3. CSS: ESCRITORIO, BARRA Y MENÚ
            ========================================= */
         #desktop {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 48px;
-            background-size: cover;
-            background-position: center;
-            transition: background-image 0.5s ease-in-out;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 48px;
+            background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80') center/cover;
             z-index: 10;
         }
 
-
-        /* =========================================
-           4. CSS: BARRA DE TAREAS Y MENÚ DE INICIO
-           ========================================= */
         #taskbar {
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 48px;
-            background: var(--taskbar-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            z-index: 9000;
-            border-top: 1px solid var(--window-border);
-            justify-content: space-between;
+            position: absolute; bottom: 0; left: 0; right: 0; height: 48px;
+            background: var(--taskbar-bg); backdrop-filter: blur(15px);
+            display: flex; align-items: center; padding: 0 15px; z-index: 9000;
+            border-top: 1px solid var(--window-border); justify-content: space-between;
         }
-
 
         .start-btn {
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            padding: 8px 15px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
+            background: transparent; border: none; color: var(--accent-color);
+            font-size: 16px; font-weight: 800; padding: 8px 15px; border-radius: 6px;
         }
-
-
         .start-btn:hover { background: rgba(255,255,255,0.1); }
 
-
-        .clock {
-            font-size: 14px;
-            color: #bac2de;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-
-        .clock:hover { background: rgba(255,255,255,0.1); }
-
-
         #start-menu {
-            position: absolute;
-            bottom: 60px;
-            left: 15px;
-            width: 300px;
-            background: var(--window-bg);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--window-border);
-            border-radius: 12px;
-            padding: 15px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 9001;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            position: absolute; bottom: 60px; left: 15px; width: 280px;
+            background: var(--window-bg); backdrop-filter: blur(25px);
+            border: 1px solid var(--window-border); border-radius: 12px; padding: 15px;
+            opacity: 0; visibility: hidden; transform: translateY(20px); transition: 0.3s; z-index: 9001;
         }
-
-
-        #start-menu.active { 
-            opacity: 1; 
-            visibility: visible; 
-            transform: translateY(0); 
-        }
-
-
-        .start-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--window-border);
-        }
-
-
-        .start-avatar {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            color: #111;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 18px;
-        }
-
+        #start-menu.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
         .start-item {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            transition: background 0.2s, padding-left 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 15px;
+            padding: 10px; border-radius: 6px; margin-bottom: 5px; transition: 0.2s; display: flex; gap: 10px;
         }
-
-
-        .start-item:hover { 
-            background: rgba(255,255,255,0.1); 
-            padding-left: 18px;
-        }
-
+        .start-item:hover { background: rgba(255,255,255,0.1); padding-left: 15px; }
+        .admin-badge { background: var(--danger); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; display: none; }
 
         /* =========================================
-           5. CSS: GESTOR DE VENTANAS (APPS)
+           4. CSS: VENTANAS Y APPS
            ========================================= */
         .window {
-            position: absolute;
-            top: 10%; left: 10%;
-            width: 700px; height: 450px;
-            background: var(--window-bg);
-            border: 1px solid var(--window-border);
-            border-radius: 12px;
-            display: none;
-            flex-direction: column;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            overflow: hidden;
-            z-index: 100;
-            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-            transform: scale(0.95);
-            opacity: 0;
+            position: absolute; top: 15%; left: 15%; width: 600px; height: 400px;
+            background: var(--window-bg); border: 1px solid var(--window-border);
+            border-radius: 8px; display: none; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px); overflow: hidden; z-index: 100;
         }
-
-
-        .window.open {
-            display: flex;
-            transform: scale(1);
-            opacity: 1;
-        }
-
-
+        .window.open { display: flex; }
         .window-header {
-            background: rgba(0,0,0,0.4);
-            padding: 12px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: grab !important;
-            border-bottom: 1px solid var(--window-border);
+            background: rgba(0,0,0,0.6); padding: 10px 15px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid var(--window-border);
         }
-
-
-        .window-header:active { cursor: grabbing !important; }
-        
-        .window-title {
-            font-weight: 600;
-            font-size: 14px;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-
-        .window-controls { display: flex; gap: 8px; }
-
-
+        .window-title { font-weight: 600; font-size: 14px; }
         .window-controls span {
-            display: inline-block;
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            transition: filter 0.2s;
+            display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 6px; transition: 0.2s;
         }
+        .close-btn { background: var(--danger); }
+        .max-btn { background: var(--success); }
+        .window-content { flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.3); overflow: hidden; }
 
+        /* Chat */
+        .chat-history { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.1); align-self: flex-start; }
+        .msg.me { background: var(--accent-color); align-self: flex-end; }
+        .chat-input-area { display: flex; padding: 10px; background: rgba(0,0,0,0.4); }
+        .chat-input-area input { flex: 1; margin: 0; border-radius: 4px 0 0 4px; }
+        .chat-input-area button { width: auto; margin: 0; border-radius: 0 4px 4px 0; padding: 0 15px; }
 
-        .window-controls span:hover { filter: brightness(1.3); }
-
-
-        .close-btn { background: var(--danger-color); }
-        .min-btn { background: #f9e2af; }
-        .max-btn { background: var(--success-color); }
-
-
-        .window-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(17, 17, 27, 0.5);
-            position: relative;
-            overflow: hidden;
-        }
-
-
-        /* =========================================
-           6. CSS: ESPECÍFICO DE APLICACIONES
-           ========================================= */
-        
-        /* Editor de Texto */
-        textarea.editor {
-            width: 100%; height: 100%;
-            background: transparent; color: white;
-            border: none; outline: none; resize: none;
-            padding: 20px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-
-        /* Escritor de Código */
-        .code-container {
-            display: flex; height: 100%; width: 100%;
-        }
-        .line-numbers {
-            background: rgba(0,0,0,0.3);
-            color: #6c7086;
-            padding: 20px 10px;
-            text-align: right;
-            font-family: 'Courier New', Courier, monospace;
-            user-select: none;
-            border-right: 1px solid var(--window-border);
-        }
-        textarea.code-editor {
-            flex: 1; height: 100%;
-            font-family: 'Courier New', Courier, monospace;
-            background: transparent;
-            color: #a6e3a1;
-            padding: 20px;
-            border: none; outline: none; resize: none;
-            white-space: pre;
-            tab-size: 4;
-        }
-
-
-        /* Chat en línea (Simulado) */
-        .chat-container {
-            display: flex; flex-direction: column; height: 100%;
-        }
-        .chat-history { 
-            flex: 1; overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .msg {
-            max-width: 80%; padding: 10px 15px; border-radius: 12px;
-            background: rgba(255,255,255,0.1);
-            align-self: flex-start;
-        }
-        .msg.me {
-            background: var(--accent-color); color: #111;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-        .msg.bot { border-bottom-left-radius: 2px; }
-        .chat-input-area { 
-            display: flex; padding: 15px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--window-border);
-        }
-        .chat-input-area input { margin: 0; border-radius: 8px 0 0 8px; border-right: none;}
-        .chat-input-area button { margin: 0; border-radius: 0 8px 8px 0; width: auto;}
-
-
-        /* Navegador Proxy */
-        .browser-toolbar {
-            display:flex; padding: 10px; background: rgba(0,0,0,0.4); gap: 10px;
-            border-bottom: 1px solid var(--window-border);
-        }
-        .browser-toolbar input { margin:0; padding:8px 15px; flex:1; border-radius: 20px; }
-        .browser-toolbar button { margin:0; padding:8px 20px; width:auto; border-radius: 20px; }
-        iframe.browser-frame {
-            width: 100%; height: 100%; border: none; background: white;
-        }
-
-
-        /* Configuración / Fondos */
-        .settings-content { padding: 20px; overflow-y: auto; }
-        .settings-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;
-        }
-        .wallpaper-thumb { 
-            width: 100%; height: 90px; background-size: cover; background-position: center;
-            border-radius: 8px; cursor: pointer !important; border: 2px solid transparent;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .wallpaper-thumb:hover { transform: scale(1.05); border-color: var(--accent-color); }
-
-
-        /* Scrollbars personalizadas */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
-
-
+        /* Store / Admin */
+        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .app-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--window-border); }
+        .app-card:hover { border-color: var(--accent-color); }
+        .admin-panel { padding: 15px; background: rgba(231, 76, 60, 0.1); border-bottom: 1px solid var(--danger); display: none; }
     </style>
 </head>
 <body>
 
-
-    <div id="setup-screen" class="fullscreen-overlay">
-        <div class="setup-box">
-            <div id="step-1" class="setup-step active">
-                <img src="https://cdn-icons-png.flaticon.com/128/3177/3177440.png" width="80" style="filter: invert(1); margin-bottom: 20px;">
-                <h1>Bienvenido a WebOS</h1>
-                <p>El sistema operativo que vive en tu navegador.<br>Vamos a preparar tu entorno de trabajo.</p>
-                <button class="btn" onclick="SetupManager.nextStep(2)">Comenzar Instalación</button>
-            </div>
-            
-            <div id="step-2" class="setup-step">
-                <h1>Términos y Condiciones</h1>
-                <p style="text-align: left; font-size: 12px; height: 100px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    Al usar WebOS, entiendes que este es un entorno simulado frontend. Los datos se guardan en el almacenamiento local de tu navegador (LocalStorage). Al borrar la caché, perderás tus configuraciones.
-                </p>
-                <button class="btn" onclick="SetupManager.nextStep(3)">Acepto</button>
-            </div>
-
-
-            <div id="step-3" class="setup-step">
-                <h1>Crear Cuenta Local</h1>
-                <p>Ingresa tus datos para crear un perfil de usuario.</p>
-                <input type="text" id="setup-user" placeholder="Nombre de usuario" autocomplete="off">
-                <input type="password" id="setup-pass" placeholder="Contraseña">
-                <button class="btn" onclick="SetupManager.finishSetup()">Finalizar y Configurar</button>
-            </div>
+    <div id="login-screen" class="fullscreen-overlay">
+        <div class="login-box">
+            <h1>🏔️ MountainOS</h1>
+            <p style="color: #aaa; margin-bottom: 20px; font-size: 14px;">Inicia sesión para continuar</p>
+            <input type="text" id="login-user" class="sys-input" placeholder="Nombre de Usuario (Ej. Nicolas, Aserzi)" autocomplete="off">
+            <button class="btn" onclick="SystemCore.login()">Entrar al Sistema</button>
         </div>
     </div>
-
-
-    <div id="login-screen" class="fullscreen-overlay hidden">
-        <div class="login-box" style="background: transparent; border: none; box-shadow: none; backdrop-filter: none;">
-            <div id="login-avatar" class="user-avatar">?</div>
-            <h1 id="login-username-display" style="font-size: 32px; margin-bottom: 20px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Usuario</h1>
-            
-            <div class="user-list" id="available-users">
-                </div>
-
-
-            <input type="password" id="login-pass" placeholder="PIN o Contraseña" style="text-align: center; max-width: 300px; margin: 0 auto; display: block; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);">
-            <button class="btn" onclick="AuthManager.login()" style="max-width: 300px; margin: 20px auto 0 auto; display: block;">Iniciar Sesión</button>
-            <p style="margin-top: 25px; font-size: 13px; color: #a6adc8; cursor: pointer;" onclick="AuthManager.showCreateNewUser()">+ Agregar otra cuenta</p>
-        </div>
-    </div>
-
 
     <div id="desktop"></div>
 
-
     <div id="taskbar">
-        <button class="start-btn" onclick="DesktopManager.toggleStartMenu()">
-            <img src="https://cdn-icons-png.flaticon.com/32/3177/3177440.png" width="20" style="filter: invert(1);"> 
-            WebOS
-        </button>
-        <div class="clock" id="taskbar-clock">00:00</div>
+        <button class="start-btn" onclick="WindowManager.toggleStartMenu()">🏔️ Menú</button>
+        <div id="clock" style="font-size: 14px; font-weight: 500;">00:00</div>
     </div>
-
 
     <div id="start-menu">
-        <div class="start-header">
-            <div class="start-avatar" id="start-menu-avatar">U</div>
-            <div>
-                <strong id="start-menu-username">Usuario</strong>
-                <div style="font-size: 12px; color: #a6adc8;">Administrador local</div>
-            </div>
+        <div style="padding-bottom: 15px; margin-bottom: 10px; border-bottom: 1px solid var(--window-border);">
+            <strong id="current-user-display">Usuario</strong>
+            <span id="admin-badge" class="admin-badge">ADMIN</span>
         </div>
-        <div class="start-item" onclick="AppManager.openApp('app-text')">📝 Editor de Texto Libre</div>
-        <div class="start-item" onclick="AppManager.openApp('app-code')">💻 Escritor de Código</div>
-        <div class="start-item" onclick="AppManager.openApp('app-chat')">💬 Chat Global (Simulado)</div>
-        <div class="start-item" onclick="AppManager.openApp('app-browser')">🌐 Navegador Proxy</div>
-        <div class="start-item" onclick="AppManager.openApp('app-settings')">⚙️ Personalización</div>
-        <hr style="border-color: var(--window-border); margin: 15px 0;">
-        <div class="start-item" onclick="AuthManager.logout()" style="color: var(--danger-color);">🚪 Cerrar Sesión</div>
+        <div class="start-item" onclick="WindowManager.openApp('app-editor')">📝 Notas Locales</div>
+        <div class="start-item" onclick="WindowManager.openApp('app-chat')">💬 Chat Global (Real)</div>
+        <div class="start-item" onclick="WindowManager.openApp('app-browser')">🌐 Navegador Proxy</div>
+        <div class="start-item" onclick="WindowManager.openApp('app-store')">🛍️ App Store</div>
+        <div id="dynamic-apps"></div> <hr style="border-color: var(--window-border); margin: 10px 0;">
+        <div class="start-item" onclick="SystemCore.logout()" style="color: var(--danger);">🚪 Cerrar Sesión</div>
     </div>
 
-
-    <div id="app-text" class="window">
+    <div id="app-editor" class="window">
         <div class="window-header">
             <div class="window-title">📝 Editor de Notas</div>
             <div class="window-controls">
-                <span class="min-btn" onclick="AppManager.minimize('app-text')"></span>
-                <span class="max-btn" onclick="AppManager.toggleMaximize('app-text')"></span>
-                <span class="close-btn" onclick="AppManager.closeApp('app-text')"></span>
+                <span class="max-btn" onclick="WindowManager.maximize('app-editor')"></span>
+                <span class="close-btn" onclick="WindowManager.closeApp('app-editor')"></span>
             </div>
         </div>
         <div class="window-content">
-            <textarea class="editor" placeholder="Escribe tus pensamientos, notas o listas aquí..."></textarea>
+            <textarea id="text-editor-area" style="width:100%; height:100%; background:transparent; color:white; border:none; outline:none; padding:15px; resize:none;" placeholder="Escribe aquí... se guardará automáticamente en tu cuenta."></textarea>
         </div>
     </div>
-
-
-    <div id="app-code" class="window">
-        <div class="window-header">
-            <div class="window-title">💻 Entorno de Desarrollo (IDE)</div>
-            <div class="window-controls">
-                <span class="min-btn" onclick="AppManager.minimize('app-code')"></span>
-                <span class="max-btn" onclick="AppManager.toggleMaximize('app-code')"></span>
-                <span class="close-btn" onclick="AppManager.closeApp('app-code')"></span>
-            </div>
-        </div>
-        <div class="window-content">
-            <div class="code-container">
-                <div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6</div>
-                <textarea class="code-editor" spellcheck="false" placeholder="// Escribe tu código aquí...
-function initWebOS() {
-    console.log('Sistema Operativo Inicializado');
-    return true;
-}"></textarea>
-            </div>
-        </div>
-    </div>
-
 
     <div id="app-chat" class="window">
         <div class="window-header">
-            <div class="window-title">💬 WebOS Messenger</div>
+            <div class="window-title">💬 Chat en Vivo</div>
             <div class="window-controls">
-                <span class="min-btn" onclick="AppManager.minimize('app-chat')"></span>
-                <span class="max-btn" onclick="AppManager.toggleMaximize('app-chat')"></span>
-                <span class="close-btn" onclick="AppManager.closeApp('app-chat')"></span>
+                <span class="max-btn" onclick="WindowManager.maximize('app-chat')"></span>
+                <span class="close-btn" onclick="WindowManager.closeApp('app-chat')"></span>
             </div>
         </div>
         <div class="window-content">
-            <div class="chat-container">
-                <div class="chat-history" id="chat-history">
-                    <div style="text-align:center; color: #a6adc8; font-size: 12px; margin-bottom: 10px;">
-                        Nota: Conexión frontend-only. Respuestas simuladas por IA.
-                    </div>
-                    <div class="msg bot"><b>Sistema:</b> ¡Bienvenido al canal global!</div>
-                </div>
-                <div class="chat-input-area">
-                    <input type="text" id="chat-input" placeholder="Escribe un mensaje aquí..." onkeypress="if(event.key === 'Enter') ChatApp.sendMessage()">
-                    <button class="btn" onclick="ChatApp.sendMessage()">Enviar</button>
-                </div>
+            <div class="chat-history" id="chat-history"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" class="sys-input" placeholder="Mensaje..." onkeypress="if(event.key === 'Enter') ChatApp.send()">
+                <button class="btn" onclick="ChatApp.send()">Enviar</button>
             </div>
         </div>
     </div>
-
 
     <div id="app-browser" class="window">
         <div class="window-header">
-            <div class="window-title">🌐 Navegador Web Interno</div>
+            <div class="window-title">🌐 Navegador Libre</div>
             <div class="window-controls">
-                <span class="min-btn" onclick="AppManager.minimize('app-browser')"></span>
-                <span class="max-btn" onclick="AppManager.toggleMaximize('app-browser')"></span>
-                <span class="close-btn" onclick="AppManager.closeApp('app-browser')"></span>
+                <span class="max-btn" onclick="WindowManager.maximize('app-browser')"></span>
+                <span class="close-btn" onclick="WindowManager.closeApp('app-browser')"></span>
             </div>
         </div>
-        <div class="browser-toolbar">
-            <input type="text" id="url-bar" value="https://es.wikipedia.org/wiki/Linux" onkeypress="if(event.key === 'Enter') BrowserApp.loadUrl()">
-            <button class="btn" onclick="BrowserApp.loadUrl()">Navegar</button>
+        <div style="display:flex; padding: 10px; background: rgba(0,0,0,0.6);">
+            <input type="text" id="url-bar" class="sys-input" value="https://es.wikipedia.org" style="margin:0; border-radius:4px 0 0 4px;" onkeypress="if(event.key === 'Enter') BrowserApp.go()">
+            <button class="btn" style="margin:0; width:auto; border-radius:0 4px 4px 0;" onclick="BrowserApp.go()">Ir</button>
         </div>
-        <div class="window-content" style="background: white;">
-            <iframe id="browser-frame" class="browser-frame" src="https://es.wikipedia.org/wiki/Linux"></iframe>
+        <div class="window-content" style="background: #fff;">
+            <iframe id="browser-frame" style="width:100%; height:100%; border:none;"></iframe>
         </div>
     </div>
 
-
-    <div id="app-settings" class="window">
+    <div id="app-store" class="window">
         <div class="window-header">
-            <div class="window-title">⚙️ Configuración del Sistema</div>
+            <div class="window-title">🛍️ Mountain Store</div>
             <div class="window-controls">
-                <span class="min-btn" onclick="AppManager.minimize('app-settings')"></span>
-                <span class="max-btn" onclick="AppManager.toggleMaximize('app-settings')"></span>
-                <span class="close-btn" onclick="AppManager.closeApp('app-settings')"></span>
+                <span class="max-btn" onclick="WindowManager.maximize('app-store')"></span>
+                <span class="close-btn" onclick="WindowManager.closeApp('app-store')"></span>
             </div>
         </div>
-        <div class="window-content settings-content">
-            <h2 style="font-weight: 500; margin-bottom: 5px;">Fondo de Pantalla</h2>
-            <p style="color: #a6adc8; font-size: 14px; margin-bottom: 20px;">Personaliza el aspecto de tu escritorio.</p>
-            
-            <h3 style="font-size: 16px; font-weight: 500;">Galería Incluida</h3>
-            <div class="settings-grid" id="wallpaper-gallery">
-                </div>
-
-
-            <h3 style="font-size: 16px; font-weight: 500; margin-top: 30px;">Fondo Personalizado (URL)</h3>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="text" id="custom-bg-url" placeholder="https://ejemplo.com/imagen.jpg">
-                <button class="btn" style="margin-top:0; width: auto;" onclick="SettingsApp.applyCustomWallpaper()">Aplicar</button>
+        <div class="window-content" style="overflow-y: auto;">
+            <div id="admin-tools" class="admin-panel">
+                <h3 style="color: var(--danger); margin-bottom: 10px;">🛠️ Developer Tools</h3>
+                <input type="text" id="new-app-name" class="sys-input" placeholder="Nombre de la nueva App">
+                <button class="btn" style="background: var(--danger);" onclick="StoreApp.createApp()">Publicar App Global</button>
             </div>
+            
+            <div class="store-grid" id="store-grid">
+                </div>
         </div>
     </div>
 
 
     <script>
-        /**
-         * WebOS Core Logic
-         * Estructurado en módulos para simular un OS real (dentro de las capacidades del navegador).
-         */
+        // 1. INICIALIZAR SOCKET (Si falla la conexión local, ignora el error visualmente)
+        let socket;
+        try { socket = io(); } catch(e) { console.warn("Socket.io no encontrado. El chat real requiere el backend."); }
 
-
-        // ==========================================
-        // 1. GESTIÓN DE USUARIOS Y AUTENTICACIÓN
-        // ==========================================
-        const AuthManager = {
-            users: JSON.parse(localStorage.getItem('webos_users')) || {},
+        // 2. NÚCLEO DEL SISTEMA (Privilegios y Autenticación)
+        const SystemCore = {
             currentUser: null,
-
-
-            init: function() {
-                if (Object.keys(this.users).length === 0) {
-                    // No hay usuarios, mostrar Setup
-                    document.getElementById('setup-screen').classList.remove('hidden');
-                } else {
-                    // Hay usuarios, mostrar Login
-                    this.showLoginScreen();
-                }
-            },
-
-
-            createUser: function(username, password) {
-                this.users[username] = {
-                    password: password,
-                    wallpaper: 'https://images.unsplash.com/photo-1542466500-dccb2789cbbb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-                    createdAt: new Date().toISOString()
-                };
-                this.saveUsers();
-                this.setCurrentUser(username);
-            },
-
-
-            saveUsers: function() {
-                localStorage.setItem('webos_users', JSON.stringify(this.users));
-            },
-
-
-            setCurrentUser: function(username) {
-                this.currentUser = username;
-                document.getElementById('start-menu-username').innerText = username;
-                document.getElementById('start-menu-avatar').innerText = username.charAt(0).toUpperCase();
-                
-                // Aplicar configuraciones del usuario
-                DesktopManager.setWallpaper(this.users[username].wallpaper);
-            },
-
-
-            showLoginScreen: function() {
-                document.getElementById('setup-screen').classList.add('hidden');
-                document.getElementById('login-screen').classList.remove('hidden');
-                
-                const userListDiv = document.getElementById('available-users');
-                userListDiv.innerHTML = '';
-                
-                const userNames = Object.keys(this.users);
-                let selectedUser = userNames[0]; // Por defecto el primero
-
-
-                userNames.forEach(name => {
-                    const chip = document.createElement('div');
-                    chip.className = `user-chip ${name === selectedUser ? 'selected' : ''}`;
-                    chip.innerText = name;
-                    chip.onclick = () => {
-                        document.querySelectorAll('.user-chip').forEach(c => c.classList.remove('selected'));
-                        chip.classList.add('selected');
-                        selectedUser = name;
-                        document.getElementById('login-username-display').innerText = name;
-                        document.getElementById('login-avatar').innerText = name.charAt(0).toUpperCase();
-                    };
-                    userListDiv.appendChild(chip);
-                });
-
-
-                document.getElementById('login-username-display').innerText = selectedUser;
-                document.getElementById('login-avatar').innerText = selectedUser.charAt(0).toUpperCase();
-                document.getElementById('login-pass').value = '';
-            },
-
+            admins: ["Nicolas", "Aserzi", "nicolas", "aserzi"],
 
             login: function() {
-                const username = document.getElementById('login-username-display').innerText;
-                const passInput = document.getElementById('login-pass').value;
+                const user = document.getElementById('login-user').value.trim();
+                if(!user) return alert("Ingresa un nombre.");
+                
+                this.currentUser = user;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('current-user-display').innerText = user;
 
-
-                if (this.users[username].password === passInput) {
-                    // Éxito
-                    document.getElementById('login-screen').classList.add('hidden');
-                    this.setCurrentUser(username);
-                } else {
-                    alert("Contraseña incorrecta. Intenta de nuevo.");
+                // Verificar privilegios
+                if(this.admins.includes(user.toLowerCase())) {
+                    document.getElementById('admin-badge').style.display = 'inline-block';
+                    document.getElementById('admin-tools').style.display = 'block';
+                    console.log("🔓 Acceso de Administrador Concedido.");
                 }
-            },
 
+                // Cargar archivos locales del usuario
+                StorageApp.loadFiles();
+                // Sincronizar tienda
+                StoreApp.fetchApps();
+            },
 
             logout: function() {
-                AppManager.closeAll();
-                document.getElementById('start-menu').classList.remove('active');
                 this.currentUser = null;
-                this.showLoginScreen();
-            },
-
-
-            showCreateNewUser: function() {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('setup-screen').classList.remove('hidden');
-                SetupManager.nextStep(3); // Saltar directo a crear usuario
+                document.getElementById('login-screen').classList.remove('hidden');
+                WindowManager.closeAll();
+                document.getElementById('start-menu').classList.remove('active');
+                document.getElementById('login-user').value = '';
+                document.getElementById('admin-badge').style.display = 'none';
+                document.getElementById('admin-tools').style.display = 'none';
             }
         };
 
-
-        // ==========================================
-        // 2. GESTIÓN DEL SETUP (Instalador)
-        // ==========================================
-        const SetupManager = {
-            nextStep: function(stepNum) {
-                document.querySelectorAll('.setup-step').forEach(el => el.classList.remove('active'));
-                document.getElementById('step-' + stepNum).classList.add('active');
-            },
-
-
-            finishSetup: function() {
-                const user = document.getElementById('setup-user').value.trim();
-                const pass = document.getElementById('setup-pass').value.trim();
-                
-                if(!user || !pass) {
-                    alert("Por favor llena todos los campos para crear la cuenta."); 
-                    return;
-                }
-                if(AuthManager.users[user]) {
-                    alert("Este usuario ya existe.");
-                    return;
-                }
-
-
-                AuthManager.createUser(user, pass);
-                
-                // Ocultar Setup, entrar al sistema
-                document.getElementById('setup-screen').classList.add('hidden');
-                document.getElementById('login-screen').classList.add('hidden');
-                
-                // Limpiar campos para la próxima
-                document.getElementById('setup-user').value = '';
-                document.getElementById('setup-pass').value = '';
-            }
-        };
-
-
-        // ==========================================
-        // 3. GESTIÓN DEL ESCRITORIO Y BARRA DE TAREAS
-        // ==========================================
-        const DesktopManager = {
+        // 3. GESTOR DE VENTANAS Y ESCRITORIO
+        const WindowManager = {
+            zIndex: 100,
+            
             init: function() {
-                this.updateClock();
-                setInterval(() => this.updateClock(), 1000);
+                setInterval(() => {
+                    const d = new Date();
+                    document.getElementById('clock').innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }, 1000);
 
-
-                // Ocultar menú de inicio al hacer clic fuera
-                document.addEventListener('click', (e) => {
-                    const menu = document.getElementById('start-menu');
-                    const btn = document.querySelector('.start-btn');
-                    if (!menu.contains(e.target) && !btn.contains(e.target)) {
-                        menu.classList.remove('active');
-                    }
-                });
-            },
-
-
-            updateClock: function() {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                document.getElementById('taskbar-clock').innerText = timeString;
-            },
-
-
-            toggleStartMenu: function() {
-                document.getElementById('start-menu').classList.toggle('active');
-            },
-
-
-            setWallpaper: function(url) {
-                document.getElementById('desktop').style.backgroundImage = `url('${url}')`;
-                // Guardar preferencia si hay usuario activo
-                if (AuthManager.currentUser) {
-                    AuthManager.users[AuthManager.currentUser].wallpaper = url;
-                    AuthManager.saveUsers();
-                }
-            }
-        };
-
-
-        // ==========================================
-        // 4. GESTOR DE VENTANAS (Window Manager)
-        // ==========================================
-        const AppManager = {
-            zIndexCounter: 100,
-            isDragging: false,
-            currentWindow: null,
-            offsetX: 0, offsetY: 0,
-
-
-            init: function() {
-                // Configurar eventos de arrastre para todas las ventanas
+                // Lógica de arrastre de ventanas
                 document.querySelectorAll('.window').forEach(win => {
                     const header = win.querySelector('.window-header');
-                    
-                    // Al hacer clic en la ventana, traer al frente
-                    win.addEventListener('mousedown', () => this.bringToFront(win));
-
-
-                    // Iniciar arrastre desde el header
-                    header.addEventListener('mousedown', (e) => {
-                        // Ignorar si se hizo clic en los botones de control
-                        if(e.target.tagName.toLowerCase() === 'span') return;
-
-
-                        this.isDragging = true;
-                        this.currentWindow = win;
+                    header.onmousedown = (e) => {
+                        if(e.target.tagName === 'SPAN') return;
                         this.bringToFront(win);
+                        let shiftX = e.clientX - win.getBoundingClientRect().left;
+                        let shiftY = e.clientY - win.getBoundingClientRect().top;
+
+                        function moveAt(pageX, pageY) {
+                            win.style.left = pageX - shiftX + 'px';
+                            win.style.top = Math.max(0, pageY - shiftY) + 'px';
+                        }
                         
-                        const rect = win.getBoundingClientRect();
-                        this.offsetX = e.clientX - rect.left;
-                        this.offsetY = e.clientY - rect.top;
-                        
-                        // Evitar selección de texto al arrastrar
-                        document.body.style.userSelect = 'none';
-                    });
-                });
-
-
-                document.addEventListener('mousemove', (e) => {
-                    if(this.isDragging && this.currentWindow) {
-                        // No arrastrar si está maximizada
-                        if(this.currentWindow.dataset.maximized === "true") return;
-
-
-                        let newX = e.clientX - this.offsetX;
-                        let newY = e.clientY - this.offsetY;
-
-
-                        // Límites de pantalla
-                        if(newY < 0) newY = 0; // No salirse por arriba
-                        
-                        this.currentWindow.style.left = newX + 'px';
-                        this.currentWindow.style.top = newY + 'px';
-                    }
-                });
-
-
-                document.addEventListener('mouseup', () => {
-                    this.isDragging = false;
-                    this.currentWindow = null;
-                    document.body.style.userSelect = 'auto';
+                        function onMouseMove(event) { moveAt(event.pageX, event.pageY); }
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.onmouseup = () => {
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.onmouseup = null;
+                        };
+                    };
+                    win.onmousedown = () => this.bringToFront(win);
                 });
             },
 
-
-            openApp: function(appId) {
-                const app = document.getElementById(appId);
+            toggleStartMenu: () => document.getElementById('start-menu').classList.toggle('active'),
+            openApp: function(id) {
+                const app = document.getElementById(id);
                 app.classList.add('open');
                 this.bringToFront(app);
                 document.getElementById('start-menu').classList.remove('active');
             },
-
-
-            closeApp: function(appId) {
-                document.getElementById(appId).classList.remove('open');
-            },
-
-
-            closeAll: function() {
-                document.querySelectorAll('.window').forEach(win => win.classList.remove('open'));
-            },
-
-
-            minimize: function(appId) {
-                // Simulación visual simple de minimizar
-                const app = document.getElementById(appId);
-                app.style.transform = 'scale(0.8) translateY(100vh)';
-                app.style.opacity = '0';
-                setTimeout(() => {
-                    app.classList.remove('open');
-                    app.style.transform = ''; // reset
-                    app.style.opacity = '';
-                }, 300);
-            },
-
-
-            toggleMaximize: function(appId) {
-                const app = document.getElementById(appId);
-                if(app.dataset.maximized === "true") {
-                    // Restaurar
-                    app.style.width = '700px';
-                    app.style.height = '450px';
-                    app.style.top = '10%';
-                    app.style.left = '10%';
-                    app.style.borderRadius = '12px';
-                    app.dataset.maximized = "false";
+            closeApp: (id) => document.getElementById(id).classList.remove('open'),
+            closeAll: () => document.querySelectorAll('.window').forEach(w => w.classList.remove('open')),
+            maximize: function(id) {
+                const win = document.getElementById(id);
+                if(win.dataset.max == "true") {
+                    win.style.width = '600px'; win.style.height = '400px'; 
+                    win.style.top = '15%'; win.style.left = '15%'; win.dataset.max = "false";
                 } else {
-                    // Maximizar
-                    app.style.width = '100vw';
-                    app.style.height = 'calc(100vh - 48px)'; // Respetar taskbar
-                    app.style.top = '0';
-                    app.style.left = '0';
-                    app.style.borderRadius = '0';
-                    app.dataset.maximized = "true";
+                    win.style.width = '100vw'; win.style.height = 'calc(100vh - 48px)'; 
+                    win.style.top = '0'; win.style.left = '0'; win.dataset.max = "true";
                 }
             },
-
-
-            bringToFront: function(element) {
-                this.zIndexCounter++;
-                element.style.zIndex = this.zIndexCounter;
+            bringToFront: function(win) {
+                this.zIndex++;
+                win.style.zIndex = this.zIndex;
             }
         };
 
+        // 4. APLICACIONES INDIVIDUALES
 
-        // ==========================================
-        // 5. CONTROLADORES DE APLICACIONES ESPECÍFICAS
-        // ==========================================
-        
-        const ChatApp = {
-            sendMessage: function() {
-                const input = document.getElementById('chat-input');
-                const history = document.getElementById('chat-history');
-                const msg = input.value.trim();
-                
-                if(msg !== "") {
-                    // Agregar mensaje del usuario
-                    history.innerHTML += `<div class="msg me"><b>${AuthManager.currentUser}:</b> ${msg}</div>`;
-                    input.value = "";
-                    history.scrollTop = history.scrollHeight;
-                    
-                    // Simular respuesta de "otros usuarios" o "bots" tras un pequeño delay
-                    setTimeout(() => {
-                        const botResponses = [
-                            "¡Hola! Saludos desde otra instancia.",
-                            "Interesante. Recuerda que este chat no tiene backend real.",
-                            "¿Cómo llevas el diseño de este SO web?",
-                            "Copiado."
-                        ];
-                        const randomRes = botResponses[Math.floor(Math.random() * botResponses.length)];
-                        history.innerHTML += `<div class="msg bot" style="border-left: 3px solid var(--success-color);"><b>WebOS Bot:</b> ${randomRes}</div>`;
-                        history.scrollTop = history.scrollHeight;
-                    }, 1200);
-                }
-            }
-        };
-
-
-        const BrowserApp = {
-            loadUrl: function() {
-                const urlBar = document.getElementById('url-bar');
-                const iframe = document.getElementById('browser-frame');
-                let url = urlBar.value.trim();
-                
-                // Añadir https si el usuario lo olvida
-                if(!url.startsWith('http://') && !url.startsWith('https://')) {
-                    url = 'https://' + url;
-                    urlBar.value = url;
-                }
-                
-                iframe.src = url;
-            }
-        };
-
-
-        const SettingsApp = {
-            wallpapers: [
-                'https://images.unsplash.com/photo-1542466500-dccb2789cbbb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-                'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-                'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-                'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-                'https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-                'https://images.unsplash.com/photo-1538370965046-79c0d6907d47?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80'
-            ],
-
-
+        // A. Almacenamiento Persistente (Notas)
+        const StorageApp = {
             init: function() {
-                const gallery = document.getElementById('wallpaper-gallery');
-                this.wallpapers.forEach(url => {
-                    const thumb = document.createElement('div');
-                    thumb.className = 'wallpaper-thumb';
-                    thumb.style.backgroundImage = `url('${url}')`;
-                    thumb.onclick = () => DesktopManager.setWallpaper(url);
-                    gallery.appendChild(thumb);
+                document.getElementById('text-editor-area').addEventListener('input', (e) => {
+                    if(SystemCore.currentUser) {
+                        localStorage.setItem(`mountain_doc_${SystemCore.currentUser}`, e.target.value);
+                    }
                 });
             },
+            loadFiles: function() {
+                const saved = localStorage.getItem(`mountain_doc_${SystemCore.currentUser}`);
+                document.getElementById('text-editor-area').value = saved || "";
+            }
+        };
 
-
-            applyCustomWallpaper: function() {
-                const url = document.getElementById('custom-bg-url').value.trim();
-                if(url) {
-                    DesktopManager.setWallpaper(url);
-                    document.getElementById('custom-bg-url').value = ''; // Limpiar input
+        // B. Chat Real (Sockets)
+        const ChatApp = {
+            init: function() {
+                if(socket) {
+                    socket.on('chat_message', (data) => {
+                        const history = document.getElementById('chat-history');
+                        const isMe = data.user === SystemCore.currentUser;
+                        history.innerHTML += `
+                            <div class="msg ${isMe ? 'me' : ''}">
+                                <div style="font-size:10px; opacity:0.7; margin-bottom:4px;">${data.user} [${data.time}]</div>
+                                ${data.msg}
+                            </div>`;
+                        history.scrollTop = history.scrollHeight;
+                    });
+                }
+            },
+            send: function() {
+                const input = document.getElementById('chat-input');
+                if(input.value.trim() && socket) {
+                    socket.emit('chat_message', { 
+                        user: SystemCore.currentUser, 
+                        msg: input.value,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                    input.value = "";
+                } else if(!socket) {
+                    alert("No hay conexión con el servidor Node.js");
                 }
             }
         };
 
-
-        // ==========================================
-        // 6. INICIALIZACIÓN DEL SISTEMA
-        // ==========================================
-        window.onload = () => {
-            DesktopManager.init();
-            AppManager.init();
-            SettingsApp.init();
-            AuthManager.init(); // Inicia el flujo de autenticación
+        // C. Navegador Proxy
+        const BrowserApp = {
+            go: function() {
+                let url = document.getElementById('url-bar').value;
+                if(!url.startsWith('http')) url = 'https://' + url;
+                document.getElementById('url-bar').value = url;
+                // Llama a la ruta /proxy que configuramos en server.js
+                document.getElementById('browser-frame').src = `/proxy?url=${encodeURIComponent(url)}`;
+            }
         };
-        const socket = io(); // Se conecta automáticamente al servidor de Render
 
-// Escuchar mensajes que vienen del servidor
-socket.on('chat_message', (data) => {
-    const history = document.getElementById('chat-history');
-    const side = (data.user === currentUser) ? 'me' : 'bot';
-    history.innerHTML += `<div class="msg ${side}"><b>${data.user}:</b> ${data.msg}</div>`;
-    history.scrollTop = history.scrollHeight;
-});
+        // D. Tienda de Apps y Creación de Apps (Nicolas/Aserzi)
+        const StoreApp = {
+            fetchApps: async function() {
+                try {
+                    const res = await fetch('/api/apps');
+                    const apps = await res.json();
+                    const grid = document.getElementById('store-grid');
+                    grid.innerHTML = '';
+                    apps.forEach(app => {
+                        grid.innerHTML += `
+                            <div class="app-card">
+                                <h3>${app.icon} ${app.name}</h3>
+                                <button class="btn" style="padding: 5px; margin-top: 10px;" onclick="alert('App ${app.name} lista!')">Instalar</button>
+                            </div>`;
+                    });
+                } catch(e) {
+                    console.log("Servidor de Apps offline. Usando tienda local fallback.");
+                }
+            },
+            createApp: async function() {
+                const name = document.getElementById('new-app-name').value;
+                if(!name) return;
+                
+                try {
+                    await fetch('/api/create-app', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            user: SystemCore.currentUser,
+                            appConfig: { id: `app-${Date.now()}`, name: name, icon: '⚡' }
+                        })
+                    });
+                    alert(`App ${name} publicada en MountainOS.`);
+                    this.fetchApps(); // Refrescar tienda
+                } catch (e) {
+                    alert("Error publicando app. Asegúrate de estar corriendo en Render con el backend activo.");
+                }
+            }
+        };
 
-// Función para enviar mensajes de verdad
-function sendMessageReal() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if(msg !== "") {
-        socket.emit('chat_message', { user: currentUser, msg: msg });
-        input.value = "";
+        // 5. ARRANQUE DEL SISTEMA
+        window.onload = () => {
+            WindowManager.init();
+            StorageApp.init();
+            ChatApp.init();
+            // Cerrar menú si se hace clic fuera
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('start-menu');
+                const btn = document.querySelector('.start-btn');
+                if (!menu.contains(e.target) && !btn.contains(e.target)) menu.classList.remove('active');
+            });
+        };
+    </script>
+</body>
+</html>
     }
 }
     </script>
