@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
 <head>
+    <script src="/socket.io/socket.io.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebOS - By Gemini</title>
@@ -1091,6 +1092,25 @@ function initWebOS() {
             SettingsApp.init();
             AuthManager.init(); // Inicia el flujo de autenticación
         };
+        const socket = io(); // Se conecta automáticamente al servidor de Render
+
+// Escuchar mensajes que vienen del servidor
+socket.on('chat_message', (data) => {
+    const history = document.getElementById('chat-history');
+    const side = (data.user === currentUser) ? 'me' : 'bot';
+    history.innerHTML += `<div class="msg ${side}"><b>${data.user}:</b> ${data.msg}</div>`;
+    history.scrollTop = history.scrollHeight;
+});
+
+// Función para enviar mensajes de verdad
+function sendMessageReal() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if(msg !== "") {
+        socket.emit('chat_message', { user: currentUser, msg: msg });
+        input.value = "";
+    }
+}
     </script>
 </body>
 </html>
